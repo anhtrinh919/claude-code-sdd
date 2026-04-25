@@ -1,0 +1,57 @@
+# Living Docs — Structure & Update Rules
+
+Living docs are always-current project documentation. Agents read them before touching code. Never scan raw source files when a living doc covers the same ground.
+
+## File Structure
+
+Every SDD project contains:
+
+    project/
+    ├── constitution.md            # Project identity — mission, stack, roadmap (created once)
+    ├── README.md                  # Overview, setup instructions, current status
+    ├── WIKI.md                    # Project learnings and gotchas (updated per phase)
+    ├── specs/
+    │   ├── phase-1-[name].md      # Phase spec (one per phase, written before implementation)
+    │   ├── phase-1-design-brief.md
+    │   ├── phase-1-handover.md    # Frontend handover to backend
+    │   └── ...
+    └── docs/
+        ├── architecture.md        # Component map, data models, tech decisions
+        ├── api.md                 # Current full API surface (always current)
+        └── decisions.md           # Key technical forks and why
+
+## File Descriptions
+
+### README.md
+Project name, mission (one sentence from constitution), setup instructions (how to run locally), current status line: "Phase N — [feature name] — in progress / complete." Update when a phase completes or setup steps change.
+
+### WIKI.md
+Project-specific learnings: gotchas, tech quirks, patterns that worked, patterns that failed. Seeded from global WIKI at project init (by tech stack). A new section is added at the end of every phase.
+
+Format for entries:
+```
+## Phase N — [Feature Name] Learnings
+- **[Topic]:** [What was learned, useful to a future agent starting fresh]
+- **[Gotcha]:** [What went wrong and how to avoid it next time]
+- **[Pattern]:** [What worked well and should be repeated]
+```
+
+### docs/architecture.md
+Component map (what exists and what it does), data models (schema with fields and types), tech decisions (link to docs/decisions.md for the why). Update when a new component is added or the data model changes.
+
+### docs/api.md
+Current full API surface. Every endpoint: method, path, auth required, brief description of what it does. Update any time an endpoint is added, changed, or removed. This is the live truth — not the spec file, which is frozen after approval.
+
+### docs/decisions.md
+Non-obvious technical choices made during the project. Format: Decision → Why → Alternatives considered. Update whenever a non-default approach is taken. Example:
+
+    **Used server-side pagination instead of cursor-based:** Simpler implementation for expected dataset size (<100k rows). Alternatives: cursor-based (better for real-time, overkill here), client-side (not viable at scale).
+
+## Update Rules
+
+1. **Read first.** Before touching code in an existing project, read the relevant living docs. Not the raw source files — the docs.
+2. **Same session.** Update docs in the same session the code changed. Not in a follow-up session.
+3. **Summaries only.** Docs are compressed — useful facts, not full code dumps or activity logs.
+4. **WIKI is not an activity log.** WIKI entries record what was *learned*, not what was *done*. Git log has the what. WIKI has the why and the surprise.
+5. **No blanks.** An empty section means the doc wasn't written. Write it or delete the section heading.
+6. **docs/api.md is always current.** If the API changed and docs/api.md wasn't updated, the doc is wrong — fix it before proceeding.

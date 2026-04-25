@@ -1,0 +1,11 @@
+{
+  "_comment": "Optional MCP servers used by claude-code-sdd skills. Uncomment and configure the ones you want. Each is independently optional — pipeline degrades gracefully when missing.",
+  "mcpServers": {
+    "_pencil_example": {
+      "_comment": "Pencil MCP — direct read/write of .pen design files used by /frontend and /backend. See https://pencil.dev for setup. Uncomment and replace the command/args/env with values from Pencil's docs.",
+      "command": "pencil-mcp",
+      "args": [],
+      "env": {}
+    }
+  }
+}
