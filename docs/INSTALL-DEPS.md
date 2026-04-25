@@ -12,13 +12,13 @@ Verify: `bun --version`
 
 Used by `/code-harness` to run `verify-<group>.sh` scripts. Without bun, backend phases still work but can't self-verify.
 
-## `claude-wiki` — per-agent memory across sessions
+## `claude-sdd-wiki` — per-agent memory across sessions
 
 ```
-/plugin install github:anhtrinh919/claude-wiki
+/plugin install github:anhtrinh919/claude-sdd-wiki
 ```
 
-Verify: `command -v claude-wiki`
+Verify: `command -v claude-sdd-wiki`
 
 Used by every skill in this pipeline. Skills read relevant past learnings at the start of a run and write new ones at friction points and phase completion. Without it, skills start from zero on every invocation (still functional, just no memory).
 

@@ -1,7 +1,7 @@
 ---
 name: preflight
 description: >
-  First-run dependency check for claude-code-sdd. Inspects the local environment for bun, claude-wiki, tdd-guard, browse, and Pencil MCP and reports a simple ✓/⚠/✗ table with install hints. Informational only — never blocks. Invoked by /build on the first run per project (guarded by `.build-state.json` field `preflight_done: true`). User can also invoke directly via /preflight to re-check later.
+  First-run dependency check for claude-code-sdd. Inspects the local environment for bun, claude-sdd-wiki, tdd-guard, browse, and Pencil MCP and reports a simple ✓/⚠/✗ table with install hints. Informational only — never blocks. Invoked by /build on the first run per project (guarded by `.build-state.json` field `preflight_done: true`). User can also invoke directly via /preflight to re-check later.
 ---
 
 # /preflight — First-Run Dependency Check
@@ -24,7 +24,7 @@ Run each check in order. Collect results into a table. Each check has four possi
 | # | Dependency | Check | Required? | Install hint |
 |---|---|---|---|---|
 | 1 | **bun** | `command -v bun` | Yes — harness verify scripts expect it | `curl -fsSL https://bun.sh/install \| bash` |
-| 2 | **claude-wiki** | `command -v claude-wiki` | No — graceful | `/plugin install github:anhtrinh919/claude-wiki` |
+| 2 | **claude-sdd-wiki** | `command -v claude-sdd-wiki` | No — graceful | `/plugin install github:anhtrinh919/claude-sdd-wiki` |
 | 3 | **tdd-guard plugin** | `test -d ~/.claude/plugins/tdd-guard` OR check `~/.claude/settings.json` `enabledPlugins` contains `tdd-guard` | Recommended for logic phases | `/plugin install github:nizos/tdd-guard` |
 | 4 | **browse CLI** | `command -v browse` OR `test -x ~/.claude/skills/gstack/browse/dist/browse` | Recommended for /review step 2 | See `docs/INSTALL-DEPS.md` in this plugin |
 | 5 | **Pencil MCP** | `claude mcp list 2>/dev/null \| grep -qi pencil` | No — frontend degrades to hand-off | Open Pencil.dev, follow Claude Code MCP setup in their docs |
@@ -43,7 +43,7 @@ Preflight check — 3 of 5 companions present.
 | Dep | Status | Why it matters | Fix |
 |---|---|---|---|
 | bun | ✓ | Harness verify scripts | — |
-| claude-wiki | ⚠ missing | Per-agent memory across sessions (optional) | `/plugin install github:anhtrinh919/claude-wiki` |
+| claude-sdd-wiki | ⚠ missing | Per-agent memory across sessions (optional) | `/plugin install github:anhtrinh919/claude-sdd-wiki` |
 | tdd-guard | ⚠ missing | Blocks edits without failing tests during logic phases | `/plugin install github:nizos/tdd-guard` |
 | browse | ✓ | /review dogfooding | — |
 | Pencil MCP | ✓ | Direct design file access | — |

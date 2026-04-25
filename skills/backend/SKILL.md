@@ -29,7 +29,7 @@ The user is not a developer. Plain language throughout — no file paths, functi
 
 Non-blocking — failures log and continue.
 
-**`claude-wiki` is an optional companion plugin.** Install with `/plugin install github:anhtrinh919/claude-wiki` to enable per-agent memory across sessions. If not installed, all wiki commands below will fail silently and the skill continues normally.
+**`claude-sdd-wiki` is an optional companion plugin.** Install with `/plugin install github:anhtrinh919/claude-sdd-wiki` to enable per-agent memory across sessions. If not installed, all wiki commands below will fail silently and the skill continues normally.
 
 ### Read wiki
 
@@ -37,7 +37,7 @@ Before Phase 0 confirm:
 1. Tags from `tech-stack.md` (language, framework, DB, key libs — up to 5).
 2. Run:
    ```
-   claude-wiki read --agent backend --tags "[tags]" --limit 5
+   claude-sdd-wiki read --agent backend --tags "[tags]" --limit 5
    ```
 3. Index under `## Relevant past learnings` in working context. On empty/fail, log and continue.
 
@@ -46,7 +46,7 @@ Before Phase 0 confirm:
 **Friction trigger** — fires in Phase 3 for each issue flagged by the Opus architectural review. One entry per issue.
 
 ```
-claude-wiki save --auto \
+claude-sdd-wiki save --auto \
   --title "Phase <N> backend friction: <issue name>" \
   --tags "[tech-stack-tags]" \
   --source "[project basename]" \
@@ -57,7 +57,7 @@ claude-wiki save --auto \
 **Phase-wrap trigger** — fires once after Phase 4 integration testing passes, before Completion. Summarizes what this phase's implementation taught.
 
 ```
-claude-wiki save --auto \
+claude-sdd-wiki save --auto \
   --title "Phase <N> backend: <one-line summary>" \
   --tags "[tech-stack-tags]" \
   --source "[project basename]" \

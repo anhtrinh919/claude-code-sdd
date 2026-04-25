@@ -24,7 +24,7 @@ Plain language throughout.
 
 Non-blocking — failures log and continue.
 
-**`claude-wiki` is an optional companion plugin.** Install with `/plugin install github:anhtrinh919/claude-wiki` to enable per-agent memory across sessions. If not installed, all wiki commands below will fail silently and the skill continues normally.
+**`claude-sdd-wiki` is an optional companion plugin.** Install with `/plugin install github:anhtrinh919/claude-sdd-wiki` to enable per-agent memory across sessions. If not installed, all wiki commands below will fail silently and the skill continues normally.
 
 ### Read wiki
 
@@ -32,7 +32,7 @@ Before writing the design brief (Phase 2):
 1. Determine tags from `tech-stack.md` (up to 5, e.g. `nextjs,tailwind,shadcn`).
 2. Run:
    ```
-   claude-wiki read --agent frontend --tags "[tags]" --limit 5
+   claude-sdd-wiki read --agent frontend --tags "[tags]" --limit 5
    ```
 3. Index hits under `## Relevant past learnings` in the skill's working context. On empty/fail, log and continue.
 
@@ -41,7 +41,7 @@ Before writing the design brief (Phase 2):
 **Friction trigger** — fires when the frontend compliance check (run by `/build` after this skill finishes) reports that screens/states from `requirements.md` are missing in `handover.md`. Write one entry covering what screen types were missed and why.
 
 ```
-claude-wiki save --auto \
+claude-sdd-wiki save --auto \
   --title "Phase <N> frontend friction: <area>" \
   --tags "[tech-stack-tags]" \
   --source "[project basename]" \
@@ -52,7 +52,7 @@ claude-wiki save --auto \
 **Phase-wrap trigger** — fires once after the handover doc is written in Phase 4, before Completion. Captures design patterns adopted vs. rejected.
 
 ```
-claude-wiki save --auto \
+claude-sdd-wiki save --auto \
   --title "Phase <N> frontend: <one-line summary>" \
   --tags "[tech-stack-tags]" \
   --source "[project basename]" \

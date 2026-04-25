@@ -30,7 +30,7 @@ Check for `mission.md` in the project root:
 
 All `/ba` runs read and potentially write to the global wiki. Non-blocking — failures log and continue.
 
-**`claude-wiki` is an optional companion plugin.** Install with `/plugin install github:anhtrinh919/claude-wiki` to enable per-agent memory across sessions. If not installed, all wiki commands below will fail silently and the skill continues normally.
+**`claude-sdd-wiki` is an optional companion plugin.** Install with `/plugin install github:anhtrinh919/claude-sdd-wiki` to enable per-agent memory across sessions. If not installed, all wiki commands below will fail silently and the skill continues normally.
 
 ### Read wiki
 
@@ -38,7 +38,7 @@ Before the first `AskUserQuestion`:
 1. Determine tags from `tech-stack.md` if present (up to 5). For Mode 1, invoke with `--agent ba` only.
 2. Run:
    ```
-   claude-wiki read --agent ba --tags "[tags]" --limit 5
+   claude-sdd-wiki read --agent ba --tags "[tags]" --limit 5
    ```
 3. If output has entries, index them under `## Relevant past learnings` in the skill's working context — titles only. Full bodies on demand.
 4. On `# No relevant entries` or CLI failure, log `No prior BA learnings` and continue.
@@ -48,7 +48,7 @@ Before the first `AskUserQuestion`:
 **Friction trigger:** tracked internally across `AskUserQuestion` rounds. If the user corrects, rejects, or re-answers the same question or decision topic 3+ times in one session, write:
 
 ```
-claude-wiki save --auto \
+claude-sdd-wiki save --auto \
   --title "Phase <N> ba friction: <topic>" \
   --tags "[tech-stack-tags]" \
   --source "[project basename]" \
@@ -61,7 +61,7 @@ Fire at most once per topic per session.
 **Phase-wrap trigger:** at the end of Mode 3, before invoking `/spec` Mode 3, write exactly one summary learning:
 
 ```
-claude-wiki save --auto \
+claude-sdd-wiki save --auto \
   --title "Phase <N> ba: <one-line summary>" \
   --tags "[tech-stack-tags]" \
   --source "[project basename]" \

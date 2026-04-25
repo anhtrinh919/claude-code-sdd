@@ -19,4 +19,4 @@ Initial public release.
 - Phase-type awareness (`initial` / `feature` / `rebuild`) in `requirements.md` frontmatter so rebuild phases override existing UI patterns instead of preserving them.
 - Visual compliance gate inside `/backend` and `/review` — screenshot the built UI, compare against the design frame, fix drift before commit.
 - Design-tokens pipeline — `/frontend` extracts variables from the design file into `design-tokens.css`; `/backend` imports it.
-- Optional graceful integration with `claude-wiki` for per-agent memory across sessions; pipeline degrades silently when not installed.
+- Optional graceful integration with `claude-sdd-wiki` for per-agent memory across sessions; pipeline degrades silently when not installed.

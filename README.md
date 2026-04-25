@@ -66,7 +66,7 @@ Every arrow is a place Claude stops and shows you something before moving on. `/
 3. **(Optional) Install companions — recommended**
    - Per-agent memory, so skills learn across projects:
      ```
-     /plugin install github:anhtrinh919/claude-wiki
+     /plugin install github:anhtrinh919/claude-sdd-wiki
      ```
    - Test-driven-development guard for logic-heavy phases:
      ```
@@ -129,7 +129,7 @@ If you're joining an existing project that already has a `mission.md`, `/build` 
 ## Troubleshooting
 
 - **`/build` keeps re-asking questions you already answered.** Your `.build-state.json` was reset or deleted — check the file exists and has the `step` you expected.
-- **Wiki integration errors in logs.** `claude-wiki` isn't installed. The skills are designed to degrade silently — these log lines are informational, not blocking.
+- **Wiki integration errors in logs.** `claude-sdd-wiki` isn't installed. The skills are designed to degrade silently — these log lines are informational, not blocking.
 - **Hook conflicts with another plugin.** Claude Code runs all plugin hooks; if two plugins register the same trigger, they both fire. Disable the conflicting plugin in Claude Code settings.
 - **`/review` says "no validation spec found."** You're invoking it outside a phase directory. Run `/spec` for this phase first.
 
@@ -139,4 +139,4 @@ If you're joining an existing project that already has a `mission.md`, `/build` 
 
 MIT. Issues and PRs at https://github.com/anhtrinh919/claude-code-sdd.
 
-Built alongside [`claude-wiki`](https://github.com/anhtrinh919/claude-wiki) — the two plugins are independent but work better together.
+Built alongside [`claude-sdd-wiki`](https://github.com/anhtrinh919/claude-sdd-wiki) — the two plugins are independent but work better together.

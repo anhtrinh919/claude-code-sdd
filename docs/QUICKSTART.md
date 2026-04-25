@@ -11,7 +11,7 @@ From zero to your first approved phase in ~15 minutes.
   ```
 - (Recommended) Install companions:
   ```
-  /plugin install github:anhtrinh919/claude-wiki
+  /plugin install github:anhtrinh919/claude-sdd-wiki
   /plugin install github:nizos/tdd-guard
   ```
 - Install `bun` (required by the verify harness): https://bun.sh

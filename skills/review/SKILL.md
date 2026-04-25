@@ -18,7 +18,7 @@ Step 1 must pass before Step 2 starts. No exceptions.
 
 Non-blocking — failures log and continue.
 
-**`claude-wiki` is an optional companion plugin.** Install with `/plugin install github:anhtrinh919/claude-wiki` to enable per-agent memory across sessions. If not installed, all wiki commands below will fail silently and the skill continues normally.
+**`claude-sdd-wiki` is an optional companion plugin.** Install with `/plugin install github:anhtrinh919/claude-sdd-wiki` to enable per-agent memory across sessions. If not installed, all wiki commands below will fail silently and the skill continues normally.
 
 ### Read wiki
 
@@ -26,7 +26,7 @@ Before running Step 1:
 1. Tags from `tech-stack.md` (up to 5).
 2. Run:
    ```
-   claude-wiki read --agent review --tags "[tags]" --limit 5
+   claude-sdd-wiki read --agent review --tags "[tags]" --limit 5
    ```
 3. Index under `## Relevant past learnings` in working context. On empty/fail, log and continue.
 
@@ -35,7 +35,7 @@ Before running Step 1:
 **Friction trigger** — fires for each bug found during Step 1 (failed automated or manual check) or Step 2 (UX bugs, visual issues). One entry per bug.
 
 ```
-claude-wiki save --auto \
+claude-sdd-wiki save --auto \
   --title "Phase <N> review friction: <bug name>" \
   --tags "[tech-stack-tags]" \
   --source "[project basename]" \
@@ -46,7 +46,7 @@ claude-wiki save --auto \
 **Phase-wrap trigger** — fires once at the end of Step 2, after the Step 2 report is written, before user approval. Summarizes review outcomes.
 
 ```
-claude-wiki save --auto \
+claude-sdd-wiki save --auto \
   --title "Phase <N> review: <one-line summary>" \
   --tags "[tech-stack-tags]" \
   --source "[project basename]" \
