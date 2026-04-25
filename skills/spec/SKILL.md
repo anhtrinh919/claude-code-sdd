@@ -20,9 +20,7 @@ Input comes from a `/ba` session. Output is structured markdown files. No drilli
 
 ## Wiki integration
 
-The `/spec` skill reads relevant past learnings at the start of every run and writes new learnings at friction points and phase completion. All wiki calls are non-blocking — a failed CLI logs a warning and the skill continues.
-
-**`claude-sdd-wiki` is an optional companion plugin.** Install with `/plugin install github:anhtrinh919/claude-sdd-wiki` to enable per-agent memory across sessions. If not installed, all wiki commands below will fail silently and the skill continues normally.
+The `/spec` skill reads relevant past learnings at the start of every run and writes new learnings at friction points and phase completion. The wiki CLI is bundled inside this plugin at `${CLAUDE_PLUGIN_ROOT}/scripts/wiki.mjs` — no extra install. All wiki calls are non-blocking — a failed CLI logs a warning and the skill continues.
 
 ### Read wiki
 
@@ -31,7 +29,7 @@ Run this **before** any mode-specific work:
 1. Determine tags from `tech-stack.md` if it exists (language + framework + key libraries — pick up to 5). For Mode 1, `tech-stack.md` does not exist yet — invoke with `--agent spec` only.
 2. Invoke:
    ```
-   claude-sdd-wiki read --agent spec --tags "[tags]" --limit 5
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/wiki.mjs" read --agent spec --tags "[tags]" --limit 5
    ```
 3. If the output starts with `# <N> relevant entries`, include a short summary in the skill's working context under `## Relevant past learnings`: the titles and one-line hooks only. Full bodies can be read on demand via the same CLI when an entry looks useful to the current task.
 4. If the output is `# No relevant entries` or the CLI fails (non-zero exit), log `No prior spec learnings` and continue silently. This is best-effort — never block the run.
@@ -41,7 +39,7 @@ Run this **before** any mode-specific work:
 Write to the wiki at two moments in the skill lifecycle. Use this format:
 
 ```
-claude-sdd-wiki save --auto \
+node "${CLAUDE_PLUGIN_ROOT}/scripts/wiki.mjs" save --auto \
   --title "[title]" \
   --tags "[tags]" \
   --source "[project basename]" \

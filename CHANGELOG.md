@@ -2,6 +2,18 @@
 
 All notable changes to `claude-code-sdd` are documented here.
 
+## [0.2.0] — 2026-04-25
+
+### Changed
+- **Bundled the wiki memory CLI inside this plugin.** The companion plugin `claude-sdd-wiki` is now archived; its CLI ships at `scripts/wiki.mjs` and is invoked by skills via `node "${CLAUDE_PLUGIN_ROOT}/scripts/wiki.mjs"`. Single-plugin install — no companion to track.
+- Skills now require `node` on PATH (already de-facto required by Claude Code itself). `bun` requirement is unchanged (verify harness only).
+- `/preflight` updated: drops `claude-sdd-wiki` row, adds `node` row.
+- README, `docs/QUICKSTART.md`, `docs/INSTALL-DEPS.md` rewritten so first-time readers see one cohesive product. No "companion plugin" framing.
+
+### Migration for v0.1.0 users
+- Existing wiki entries at `~/.claude/wiki/` are unaffected — same data dir.
+- Optionally uninstall the standalone `claude-sdd-wiki` plugin once you're on v0.2.0 of this plugin: `/plugin uninstall claude-sdd-wiki`.
+
 ## [0.1.0] — 2026-04-25
 
 Initial public release.

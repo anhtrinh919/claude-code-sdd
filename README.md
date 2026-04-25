@@ -32,6 +32,12 @@ As Claude builds each UI piece, it screenshots what it made, puts it side by sid
 **4. Review**
 After everything's built, a separate review skill runs through the app like a real user — clicking through every flow, checking the spec line by line, and writing up what works, what's broken, and what looks off. In plain English you can actually act on.
 
+### Built-in memory
+
+Each skill keeps its own scratchpad. When the BA learns that "who uses this?" usually surfaces the real requirements, that lesson is saved to a local wiki at `~/.claude/wiki/` and read back the next time the BA runs — on this project or any other. Same for the spec writer, the frontend skill, the backend skill, and the reviewer. Skills get smarter across sessions instead of starting from zero every time.
+
+The wiki ships inside this plugin. No separate install. The data lives on your machine; you can read, edit, or delete it like any folder of markdown files.
+
 ---
 
 ## Who this is for
@@ -48,7 +54,7 @@ The bigger your project, the more Claude drifts without structure. If you're pas
 
 **Don't try this on Claude Pro.** Each gate burns a lot of context. You will hit rate limits mid-build and the flow will stall. Max plan minimum.
 
-**This is v0.1.0.** Gates will break. Flows will get stuck. When they do, file an issue and I'll fix it fast.
+**This is v0.2.0.** Gates will break. Flows will get stuck. When they do, file an issue and I'll fix it fast.
 
 ---
 
@@ -71,11 +77,6 @@ https://claude.com/claude-code
 ```
 
 **Step 3 — Optional but recommended**
-
-Memory across sessions (skills remember your project):
-```
-/plugin install github:anhtrinh919/claude-sdd-wiki
-```
 
 TDD guard for logic-heavy phases:
 ```
@@ -159,7 +160,7 @@ Check `.build-state.json` in the project root — it shows the last approved gat
 Your `.build-state.json` was reset or deleted. Check that the file exists and has the `step` you expect.
 
 **Wiki errors in the logs.**
-`claude-sdd-wiki` isn't installed. These are informational — nothing is blocked.
+The bundled wiki CLI couldn't write or read. These are informational — nothing is blocked. If they persist, check that `node` is on PATH (`command -v node`).
 
 **`/review` says "no validation spec found."**
 You're running it outside a phase directory. Run `/spec` for this phase first.
@@ -172,5 +173,3 @@ Claude Code fires all hooks from all plugins. If two plugins register the same t
 ## Contributing
 
 MIT. Issues and PRs at https://github.com/anhtrinh919/claude-code-sdd
-
-Companion plugin (memory across sessions): https://github.com/anhtrinh919/claude-sdd-wiki

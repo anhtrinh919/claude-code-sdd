@@ -1,7 +1,7 @@
 ---
 name: preflight
 description: >
-  First-run dependency check for claude-code-sdd. Inspects the local environment for bun, claude-sdd-wiki, tdd-guard, browse, and Pencil MCP and reports a simple ✓/⚠/✗ table with install hints. Informational only — never blocks. Invoked by /build on the first run per project (guarded by `.build-state.json` field `preflight_done: true`). User can also invoke directly via /preflight to re-check later.
+  First-run dependency check for claude-code-sdd. Inspects the local environment for node, bun, tdd-guard, browse, and Pencil MCC and reports a simple ✓/⚠/✗ table with install hints. Informational only — never blocks. Invoked by /build on the first run per project (guarded by `.build-state.json` field `preflight_done: true`). User can also invoke directly via /preflight to re-check later.
 ---
 
 # /preflight — First-Run Dependency Check
@@ -23,13 +23,15 @@ Run each check in order. Collect results into a table. Each check has four possi
 
 | # | Dependency | Check | Required? | Install hint |
 |---|---|---|---|---|
-| 1 | **bun** | `command -v bun` | Yes — harness verify scripts expect it | `curl -fsSL https://bun.sh/install \| bash` |
-| 2 | **claude-sdd-wiki** | `command -v claude-sdd-wiki` | No — graceful | `/plugin install github:anhtrinh919/claude-sdd-wiki` |
+| 1 | **node** | `command -v node` | Yes — runs the bundled wiki CLI at `${CLAUDE_PLUGIN_ROOT}/scripts/wiki.mjs` | https://nodejs.org (LTS) — comes with Claude Code on most setups |
+| 2 | **bun** | `command -v bun` | Yes — harness verify scripts expect it | `curl -fsSL https://bun.sh/install \| bash` |
 | 3 | **tdd-guard plugin** | `test -d ~/.claude/plugins/tdd-guard` OR check `~/.claude/settings.json` `enabledPlugins` contains `tdd-guard` | Recommended for logic phases | `/plugin install github:nizos/tdd-guard` |
 | 4 | **browse CLI** | `command -v browse` OR `test -x ~/.claude/skills/gstack/browse/dist/browse` | Recommended for /review step 2 | See `docs/INSTALL-DEPS.md` in this plugin |
 | 5 | **Pencil MCP** | `claude mcp list 2>/dev/null \| grep -qi pencil` | No — frontend degrades to hand-off | Open Pencil.dev, follow Claude Code MCP setup in their docs |
 
 For each check, mark ✓ if present, ⚠ if missing but optional/recommended, ✗ if missing and required, ? if the check command itself failed.
+
+The wiki memory CLI used by skills is bundled inside this plugin (`scripts/wiki.mjs`) — there is no separate install step. It only requires `node` (check #1).
 
 ---
 
@@ -38,19 +40,20 @@ For each check, mark ✓ if present, ⚠ if missing but optional/recommended, �
 One markdown table, preceded by a single plain-language sentence summary. Example:
 
 ```
-Preflight check — 3 of 5 companions present.
+Preflight check — 4 of 5 companions present.
 
 | Dep | Status | Why it matters | Fix |
 |---|---|---|---|
+| node | ✓ | Runs the bundled wiki memory CLI | — |
 | bun | ✓ | Harness verify scripts | — |
-| claude-sdd-wiki | ⚠ missing | Per-agent memory across sessions (optional) | `/plugin install github:anhtrinh919/claude-sdd-wiki` |
 | tdd-guard | ⚠ missing | Blocks edits without failing tests during logic phases | `/plugin install github:nizos/tdd-guard` |
 | browse | ✓ | /review dogfooding | — |
 | Pencil MCP | ✓ | Direct design file access | — |
 ```
 
 After the table, one plain-language sentence summarizing what's safe to run:
-- If bun is present: "`/build` will work — install the optional companions above when you hit the phases that use them."
+- If node and bun are present: "`/build` will work — install the optional companions above when you hit the phases that use them."
+- If node is missing: "`/build` runs, but skills won't be able to save or read their memory. Install Node.js, then re-run `/preflight`."
 - If bun is missing: "`/build` will run but any backend phase will fail at the verify step. Install bun first, then re-run `/preflight`."
 
 ---

@@ -1,0 +1,19 @@
+{
+  "name": "claude-code-sdd",
+  "version": "0.2.0",
+  "description": "Build-only manifest for the bundled wiki CLI inside the claude-code-sdd Claude Code plugin. Not published to npm.",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "bun build src/wiki/cli.ts --target=node --outfile scripts/wiki.mjs"
+  },
+  "dependencies": {
+    "gray-matter": "4.0.3",
+    "simple-git": "3.36.0",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "bun-types": "1.3.13"
+  }
+}

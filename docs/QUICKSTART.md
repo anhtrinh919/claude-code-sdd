@@ -9,9 +9,8 @@ From zero to your first approved phase in ~15 minutes.
   ```
   /plugin install github:anhtrinh919/claude-code-sdd
   ```
-- (Recommended) Install companions:
+- (Recommended) Install `tdd-guard` for logic-heavy phases:
   ```
-  /plugin install github:anhtrinh919/claude-sdd-wiki
   /plugin install github:nizos/tdd-guard
   ```
 - Install `bun` (required by the verify harness): https://bun.sh

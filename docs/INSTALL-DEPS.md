@@ -1,6 +1,18 @@
 # Installing Optional Dependencies
 
-`claude-code-sdd` works out of the box. Optional companions unlock more gates and better memory. Install only what you need.
+`claude-code-sdd` works out of the box. Optional companions unlock more gates. Install only what you need.
+
+## `node` — runs the bundled wiki memory CLI
+
+```
+# macOS
+brew install node
+# Linux / other: see https://nodejs.org
+```
+
+Verify: `node --version`
+
+The wiki memory CLI is bundled inside this plugin (`scripts/wiki.mjs`). Skills invoke it via `node` to save and recall their own learnings across sessions. Most Claude Code installs already have node — no extra step usually needed.
 
 ## `bun` — required by the verify harness
 
@@ -11,16 +23,6 @@ curl -fsSL https://bun.sh/install | bash
 Verify: `bun --version`
 
 Used by `/code-harness` to run `verify-<group>.sh` scripts. Without bun, backend phases still work but can't self-verify.
-
-## `claude-sdd-wiki` — per-agent memory across sessions
-
-```
-/plugin install github:anhtrinh919/claude-sdd-wiki
-```
-
-Verify: `command -v claude-sdd-wiki`
-
-Used by every skill in this pipeline. Skills read relevant past learnings at the start of a run and write new ones at friction points and phase completion. Without it, skills start from zero on every invocation (still functional, just no memory).
 
 ## `tdd-guard` — blocks edits without a failing test
 
