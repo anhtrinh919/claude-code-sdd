@@ -29,8 +29,6 @@ The user is not a developer. Plain language throughout — no file paths, functi
 
 Non-blocking — failures log and continue.
 
-The wiki CLI is bundled inside this plugin at `${CLAUDE_PLUGIN_ROOT}/scripts/wiki.mjs` — no extra install.
-
 ### Read wiki
 
 Before Phase 0 confirm:
@@ -78,9 +76,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/wiki.mjs" save --auto \
 5. **Open the design file** if `handover.md` lists one under "Design file — source of truth". See Design file rules below — this step is non-negotiable for any phase that touches UI.
 6. **Import design tokens** — if `handover.md` references a `design-tokens.css`, import it from the app's global stylesheet (e.g. `@import './design-tokens.css'` at the top of `globals.css`). Tokens are the single source of truth for colors, fonts, sizes. Do not re-extract by hand, do not approximate.
 
-Confirm with user in plain language: "I'll build: [list the API endpoints from requirements.md]. Phase type: [initial/feature/rebuild]. TDD-guard: [on/off]. Following: [relevant tech-stack constraints]. Out of scope: [UI, design, anything not in requirements.md]. OK to proceed?"
-
-Do not start implementation until confirmed.
+Log internally: "Building: [API endpoints]. Phase type: [initial/feature/rebuild]. TDD-guard: [on/off]. Constraints: [relevant tech-stack constraints]. Out of scope: UI, design." Proceed immediately — the spec was already user-approved.
 
 ---
 
@@ -97,7 +93,9 @@ Additive work on an existing product. Follow existing codebase patterns (file la
 ### `rebuild`
 Visual or structural redesign of existing product. **Existing UI patterns are explicitly overridden by the design file.** Do not preserve components, layouts, or chrome from prior phases just because they exist. If the design shows a top-header pattern and the codebase has a left sidebar, delete the sidebar — do not restyle it. Code-harness's "no invented abstractions" still applies to utilities, stores, and logic; it does **not** apply to visual layout or component structure.
 
-If the `type` field is missing or unclear, stop and ask: "Phase type not specified in requirements.md — is this `initial`, `feature`, or `rebuild`?"
+If the `type` field is missing: read `mission.md`. If `mission.md` indicates a **greenfield** project (no prior shipped phases — `roadmap.md` shows Phase 1 still in progress, no `CHANGELOG.md` entries), stop and ask the user since the choice between `initial` and `rebuild` is non-obvious. Otherwise default to `feature` — this is the steady-state case and asking every phase is friction. Log the default in working context: "type defaulted to feature (mission.md shows N shipped phases)".
+
+If the `type` field is present but unclear (typo, unknown value), stop and ask: "Phase type `<value>` not recognised — is this `initial`, `feature`, or `rebuild`?"
 
 ---
 
@@ -127,9 +125,13 @@ The design file is the **visual and structural source of truth** — it supersed
 
 ## Phase 1 — TDD setup
 
+**Codepath diagram (tdd_guard: on only):** Before writing any implementation code, map every function and code path that this phase will add or change. For each: list the happy path, the edge cases (null input, empty input, boundary values), and the error paths (upstream failure, invalid state). Mark each path `[TESTED]` or `[GAP]`. This diagram is the test plan — code-harness uses it to know what coverage is required.
+
+Also enforce: any code path that previously had a passing test and is touched by this phase requires a regression test. The regression test must fail without the fix and pass with it. This is non-negotiable regardless of `tdd_guard` setting.
+
 **Check `tdd_guard` field in `requirements.md` frontmatter.**
 
-- If `tdd_guard: off` (typical for `rebuild` phases or pure-UI work with no new logic): write `{"guardEnabled": false}` to `.claude/tdd-guard/data/config.json` and skip the rest of Phase 1. Do not write failing tests per group — there's no logic under test.
+- If `tdd_guard: off` (typical for `rebuild` phases or pure-UI work with no new logic): run `tdd-config disable` from the project root and skip the rest of Phase 1. Do not write failing tests per group — there's no logic under test.
 - If `tdd_guard: on` (typical for `initial` or `feature` with new backend logic): continue below.
 
 Install and enable `tdd-guard` for this phase:
@@ -144,9 +146,11 @@ Write or merge into `.claude/settings.json` in the project root:
 }
 ```
 
-Write `{"guardEnabled": true}` to `.claude/tdd-guard/data/config.json` (create dir if missing).
+Run `tdd-config enable` from the project root. On first init this seeds a curated `ignorePatterns` list (md/txt/log/json/yml/yaml/xml/html/css/rst plus SDD-specific: `verify-*.sh`, `**/migrations/**`, `**/db/schema.*`, `**/seed/**`, `**/fixtures/**`, `**/dist/**`, `**/generated/**`, `*.config.ts`, etc.). On subsequent runs it preserves whatever the project has accumulated — never write `config.json` with raw JSON, that wipes the patterns.
 
-At phase completion or abort: write `{"guardEnabled": false}`.
+When the guard blocks a file that legitimately can't be unit-tested (declarative schema, generated code, build config, smoke verify script): run `tdd-config ignore '<pattern>'` to persist the exemption. Do not disable the guard or write a fake test as a workaround — the pattern needs to survive into the next phase and session. Use `tdd-config ignore --remove '<pattern>'` to undo.
+
+At phase completion or abort: run `tdd-config disable`.
 
 ---
 
@@ -160,7 +164,13 @@ For each group:
 3. Write failing tests — **if `tdd_guard: on`**. Skip for `tdd_guard: off`.
 4. Implement — minimum code to pass the tests / deliver the slice
 5. Self-verify: run `verify-group-N.sh`
-6. If red: fix and retry. If 2× estimate and still red: stop patching. Try a different approach. If both fail: surface to user in plain language.
+6. If red: apply root cause discipline before touching anything:
+   - **Iron law:** no fix without root cause first. Trace the failing codepath — read what's actually happening, check what recently changed.
+   - Form one hypothesis. Test it with a targeted check or temporary log. Do not write fix code before verifying the hypothesis.
+   - After 3 failed hypotheses: stop. Surface to user: "Stuck after 3 approaches. Tried: [list]. Suspect: [what]. Need: [what decision]."
+   - Red flag — stop immediately if each fix reveals a new problem: you're fixing at the wrong layer.
+   - **WTF score** — track across this task group: start 0%, add 15% per revert, 5% per fix touching >3 files, 20% for any change outside this group's scope. Above 20%: stop and surface before continuing. Hard stop at 3 complete reverts.
+   If 2× estimate with no root cause found: surface to user in plain language.
 7. **Visual compliance gate (UI groups only).** See below — this is a mandatory stop before commit for any group that renders UI.
 8. Commit with a plain-English summary user can read in 2 seconds
 
@@ -193,9 +203,9 @@ For every new codepath:
 
 ## Phase 3 — Architectural Review
 
-After all groups are implemented. Read `~/.claude/advisor-template.json`, fill it out in under 300 words.
+After all groups are implemented. Spawn a subagent (Opus model preferred) for an architectural review under 300 words.
 
-In `stuck_on`: "Review overall backend architecture for Phase [N]. Per-task logic was harness-verified. Flag: wrong abstractions, coupling issues, structural risks the plan didn't anticipate, missing seams for future change, system-boundary security concerns. Cite line ranges — do not paste file contents."
+Brief: "Review overall backend architecture for Phase [N]. Per-task logic was harness-verified. Flag: wrong abstractions, coupling issues, structural risks the plan didn't anticipate, missing seams for future change, system-boundary security concerns. Cite line ranges — do not paste file contents."
 
 Act on findings silently:
 - Clear structural risk → fix before Phase 4
@@ -220,7 +230,7 @@ Test the feature as a whole against every API contract in `requirements.md`. Not
 
 ## Completion
 
-Write `{"guardEnabled": false}` to `.claude/tdd-guard/data/config.json`.
+Run `tdd-config disable` from the project root.
 
 **Pre-Completion:** Run the phase-wrap Write learning (see Wiki integration) — one entry per phase.
 
@@ -229,6 +239,8 @@ Write `{"guardEnabled": false}` to `.claude/tdd-guard/data/config.json`.
 > **API endpoints:** [count] implemented, all integration-tested
 > **Status:** Ready / Has known issues / Blocked
 > **What I'd watch:** [one line on anything fragile — only if relevant]
+
+Immediately invoke `/review`. Do not stop or wait for the user.
 
 ---
 

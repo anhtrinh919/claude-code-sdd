@@ -15,6 +15,29 @@ Collect every decision needed to drive the build. Your output goes to `/spec` wh
 
 Only escalate a technical decision to user when it directly changes what he or his users experience. Frame it as: "I'd do X — it means Y for users. OK?" Never ask for technical approval on invisible decisions.
 
+**Looks like a product question, is actually technical** — Claude decides silently:
+- Auth provider (Auth0 vs. Clerk vs. roll-your-own) — user sees "log in," not the SDK.
+- Database engine (Postgres vs. SQLite vs. Supabase) — user sees data load, not the storage.
+- Deployment target (Fly vs. Vercel vs. Railway) — user sees a URL, not the host.
+- State management (Zustand vs. Redux vs. Context) — invisible.
+- Test framework, lint config, CSS strategy, build tooling — invisible.
+- Whether to add a cache, queue, or background worker — outcome-equivalent until performance becomes user-visible.
+
+Only ask if the choice changes user-facing tradeoffs (e.g., "Postgres means we can do search; SQLite means single-file backup. Which matters more?").
+
+---
+
+## Drilling discipline
+
+**Decision-tree traversal — go deep on one branch before opening the next.** When a topic surfaces (e.g., "who uses this"), follow up on it with 3-6 follow-ups — name the role, name the consequence, name what they said directly, name an alternative they tried — before moving to the next topic. Do not round-robin across topics. Do not collect a shallow answer on each topic and call it done.
+
+**Volume targets per mode** (these are floors, not ceilings — keep going if depth requires it):
+- **Mode 1 (new project):** 5-50 questions — wide range, depends on idea scope. A clear, narrow product needs fewer; a broad/early idea needs the full grill.
+- **Mode 2 (phase scope):** 5-20 questions — phases are pre-scoped by the roadmap, so most of the work is confirming and detailing user stories + screens.
+- **Mode 3 (replan):** 0-5 questions — often the answer is "nothing changed, proceed to N+1." Zero is acceptable. Don't invent questions to hit a count.
+
+If you find yourself wanting to stop after 3-4 questions in Mode 1 or 2, ask: did I follow up on every answer? Did I push for the specific person, the specific consequence, the specific workaround? Most of the time the answer is no — keep going.
+
 ---
 
 ## Mode detection
@@ -28,7 +51,7 @@ Check for `mission.md` in the project root:
 
 ## Wiki integration
 
-All `/ba` runs read and potentially write to the global wiki at `~/.claude/wiki/`. The wiki CLI is bundled inside this plugin at `${CLAUDE_PLUGIN_ROOT}/scripts/wiki.mjs` — no extra install. Memory writes and reads are non-blocking; on any failure, log a one-line warning and continue.
+All `/ba` runs read and potentially write to the global wiki. Non-blocking — failures log and continue.
 
 ### Read wiki
 
@@ -159,9 +182,11 @@ Then ask: "Does this phase add new logic (new API endpoints, new DB tables, new 
 These two fields end up in `requirements.md` frontmatter and govern backend behavior. Getting them wrong silently fails later (e.g., rebuild phase that tries to preserve existing sidebars).
 
 **What this phase delivers:**
-- What's the narrowest version of this feature that's genuinely useful — not half a feature, but complete?
+- The roadmap entry says "[exact text from roadmap.md]." Does that still match what you want this phase to deliver?
 - What can a user do at the end of this phase that they couldn't do before?
 - What's explicitly out of scope for this phase, even if related?
+
+(Note: phase scope was set in Mode 1 when the roadmap was decided. Don't re-scope here — confirm and detail. If the roadmap entry feels wrong, that's a constitution change — surface it and ask whether to update `roadmap.md` before drilling further.)
 
 **Who and why:**
 - Who uses this feature specifically?
@@ -184,11 +209,25 @@ Find 2–3 apps that solve this specific feature (not the whole product — just
 
 Extract: what screens exist, what patterns are standard, what's distinctive. Build a quick comparison. Ask user: "Seen these? Anything worth stealing? Anything to avoid?" One `AskUserQuestion` with the options: "Use some of these patterns," "Avoid all of these," "Take note but design differently."
 
+### Primary flow
+
+Before handing off, identify the 1–3 user stories that represent the core value of this phase — the ones where a failure would make the feature useless. These become the stop criteria in `/review`.
+
+Format as a short labeled list:
+```
+Primary flow:
+1. [Story: exact wording from Part B]
+2. [Story]  ← optional
+3. [Story]  ← optional
+```
+
+Include this list in the handoff to `/spec`. Any story NOT in this list is a secondary story — bugs block but do not stop the review.
+
 ### Handoff
 
 Tell user: "Got the full scope. Phase type: [initial/feature/rebuild]. TDD guard: [on/off]. `/spec` will write the requirements, implementation plan, and validation checklist — and show them to you for approval before touching the disk."
 
-Invoke `/spec` Mode 2 with the phase type and TDD guard decisions.
+Invoke `/spec` Mode 2 with the phase type, TDD guard decisions, and primary flow list.
 
 ---
 

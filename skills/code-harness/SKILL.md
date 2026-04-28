@@ -47,10 +47,14 @@ If you can't produce all three in ≤3 lines, the task isn't scoped. Stop and as
 
 ### Layer 2 — TDD-Guard
 
-`tdd-guard` is globally installed but defaults OFF. This skill activates it for the duration of the workflow:
+`tdd-guard` is globally installed but defaults OFF. This skill activates it for the duration of the workflow via the `tdd-config` helper:
 
-- **At step 1 of "Per-task workflow"** (before Spec-Light), write `{"guardEnabled": true}` to `<project-cwd>/.claude/tdd-guard/data/config.json` (create the dir if missing). With it on, tdd-guard physically blocks edits without a prior failing test.
-- **After step 9 (Commit)** or whenever the workflow exits (escalation, abort), write `{"guardEnabled": false}` so casual edits in this project after the task aren't gated.
+- **At step 1 of "Per-task workflow"** (before Spec-Light), run `tdd-config enable` from the project root. On first init this seeds a curated `ignorePatterns` list (md/txt/log/json/yml/yaml/xml/html/css/rst plus SDD additions: `verify-*.sh`, `**/migrations/**`, `**/db/schema.*`, `**/seed/**`, `**/fixtures/**`, `**/dist/**`, `**/generated/**`, `*.config.ts`, etc.). On subsequent runs it preserves whatever the project has accumulated. With guard on, tdd-guard physically blocks edits without a prior failing test.
+- **After step 9 (Commit)** or whenever the workflow exits (escalation, abort), run `tdd-config disable`. This flips `guardEnabled` to false but leaves `ignorePatterns` untouched.
+
+**Never write `config.json` directly with raw JSON** — that wipes the project's accumulated `ignorePatterns` and forces the agent to re-discover the same exemptions every session. Always go through `tdd-config`.
+
+**When the guard blocks a legitimately untestable file** (declarative schema, generated code, migration, build config, smoke-only verify script): run `tdd-config ignore '<pattern>'` to persist the exemption. Do not disable the guard, do not write a fake test, and do not work around it inline — the pattern needs to survive into the next session. Use `tdd-config ignore --remove '<pattern>'` to undo if the exemption was wrong.
 
 If the file write fails (read-only repo, sandboxed env): proceed without enforcement, but write the failing test anyway. If the task genuinely can't be unit-tested (manual UI), a `verify.sh` smoke check is the equivalent.
 

@@ -1,0 +1,172 @@
+#!/bin/sh
+':' //; exec "$(command -v node 2>/dev/null || command -v bun 2>/dev/null || echo $HOME/.bun/bin/bun)" "$0" "$@"
+// tdd-config — manage .claude/tdd-guard/data/config.json without wiping ignorePatterns.
+//
+// Subcommands:
+//   enable                 set guardEnabled:true; seed SDD defaults if config is new
+//   disable                set guardEnabled:false; preserve everything else
+//   ignore <pattern>       append pattern to ignorePatterns (idempotent)
+//   ignore --remove <pat>  drop a pattern from ignorePatterns
+//   show                   print current resolved config
+//
+// Always operates on <cwd>/.claude/tdd-guard/data/config.json. Creates dirs as needed.
+// Zero dependencies — node built-ins only.
+
+const fs = require('fs')
+const path = require('path')
+
+const CONFIG_DIR = path.join(process.cwd(), '.claude', 'tdd-guard', 'data')
+const CONFIG_PATH = path.join(CONFIG_DIR, 'config.json')
+
+const TDD_GUARD_DEFAULTS = [
+  '*.md',
+  '*.txt',
+  '*.log',
+  '*.json',
+  '*.yml',
+  '*.yaml',
+  '*.xml',
+  '*.html',
+  '*.css',
+  '*.rst',
+]
+
+const SDD_DEFAULTS = [
+  'verify-*.sh',
+  '**/verify-*.sh',
+  '**/migrations/**',
+  '**/db/schema.*',
+  '**/schema.sql',
+  '**/seed/**',
+  '**/seeds/**',
+  '**/fixtures/**',
+  '**/dist/**',
+  '**/build/**',
+  '**/.next/**',
+  '**/out/**',
+  '**/generated/**',
+  '**/__generated__/**',
+  '*.config.ts',
+  '*.config.js',
+  '*.config.mjs',
+  'next.config.*',
+  'vite.config.*',
+]
+
+const SEED_PATTERNS = [...TDD_GUARD_DEFAULTS, ...SDD_DEFAULTS]
+
+function readConfig() {
+  if (!fs.existsSync(CONFIG_PATH)) return { config: {}, existed: false }
+  try {
+    const raw = fs.readFileSync(CONFIG_PATH, 'utf8')
+    return { config: JSON.parse(raw), existed: true }
+  } catch {
+    return { config: {}, existed: true }
+  }
+}
+
+function writeConfig(config) {
+  fs.mkdirSync(CONFIG_DIR, { recursive: true })
+  fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2) + '\n')
+}
+
+function dedupe(arr) {
+  return Array.from(new Set(arr))
+}
+
+function cmdEnable() {
+  const { config, existed } = readConfig()
+  config.guardEnabled = true
+  if (!existed || !Array.isArray(config.ignorePatterns)) {
+    config.ignorePatterns = [...SEED_PATTERNS]
+    writeConfig(config)
+    console.log(
+      `enabled — seeded ${SEED_PATTERNS.length} default ignorePatterns (first init)`
+    )
+    return
+  }
+  writeConfig(config)
+  console.log(
+    `enabled — preserved ${config.ignorePatterns.length} existing ignorePatterns`
+  )
+}
+
+function cmdDisable() {
+  const { config } = readConfig()
+  config.guardEnabled = false
+  writeConfig(config)
+  const n = Array.isArray(config.ignorePatterns)
+    ? config.ignorePatterns.length
+    : 0
+  console.log(`disabled — preserved ${n} ignorePatterns`)
+}
+
+function cmdIgnore(args) {
+  if (args.length === 0) {
+    console.error('usage: tdd-config ignore <pattern>')
+    console.error('       tdd-config ignore --remove <pattern>')
+    process.exit(2)
+  }
+  const remove = args[0] === '--remove' || args[0] === '-r'
+  const pattern = remove ? args[1] : args[0]
+  if (!pattern) {
+    console.error('error: missing pattern')
+    process.exit(2)
+  }
+  const { config } = readConfig()
+  if (!Array.isArray(config.ignorePatterns)) {
+    config.ignorePatterns = [...SEED_PATTERNS]
+  }
+  if (remove) {
+    const before = config.ignorePatterns.length
+    config.ignorePatterns = config.ignorePatterns.filter((p) => p !== pattern)
+    writeConfig(config)
+    const removed = before - config.ignorePatterns.length
+    console.log(
+      removed > 0
+        ? `removed "${pattern}" (${config.ignorePatterns.length} patterns remain)`
+        : `pattern "${pattern}" not found (no change)`
+    )
+    return
+  }
+  if (config.ignorePatterns.includes(pattern)) {
+    console.log(`already ignored: "${pattern}"`)
+    return
+  }
+  config.ignorePatterns = dedupe([...config.ignorePatterns, pattern])
+  writeConfig(config)
+  console.log(
+    `added "${pattern}" (${config.ignorePatterns.length} patterns total)`
+  )
+}
+
+function cmdShow() {
+  const { config, existed } = readConfig()
+  if (!existed) {
+    console.log(`no config at ${CONFIG_PATH}`)
+    return
+  }
+  console.log(`config: ${CONFIG_PATH}`)
+  console.log(JSON.stringify(config, null, 2))
+}
+
+const [, , sub, ...rest] = process.argv
+switch (sub) {
+  case 'enable':
+    cmdEnable()
+    break
+  case 'disable':
+    cmdDisable()
+    break
+  case 'ignore':
+    cmdIgnore(rest)
+    break
+  case 'show':
+    cmdShow()
+    break
+  default:
+    console.error(
+      'usage: tdd-config <enable|disable|ignore <pattern>|ignore --remove <pattern>|show>'
+    )
+    process.exit(2)
+}

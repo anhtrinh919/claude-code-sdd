@@ -42,7 +42,7 @@ Teams with an existing dev process don't need this. Neither do developers who wa
 
 **Don't try this on Claude Pro.** This workflow is about 18-20% more token-heavy than a normal Claude Code build. You'll hit rate limits mid-build and the flow will stall. Max plan minimum.
 
-**This is v0.2.0.** Gates will break. Flows will get stuck. When they do, file an issue and I'll fix it fast.
+**This is v0.3.0.** Gates will break. Flows will get stuck. When they do, file an issue and I'll fix it fast.
 
 ---
 
@@ -158,8 +158,13 @@ Claude Code fires all plugin hooks. If two plugins register the same trigger, bo
 
 ---
 
+## Bundled tools
+
+- `scripts/wiki.mjs` — per-skill memory store. Skills auto-call it; you don't have to.
+- `bin/tdd-config` — the **only** sanctioned way to toggle tdd-guard config per phase. Hand-editing `.claude/tdd-guard/data/config.json` wipes the project's accumulated `ignorePatterns`. The wrapper merges instead. See `docs/INSTALL-DEPS.md` for usage.
+
+---
+
 ## Contributing
 
 MIT. Issues and PRs: https://github.com/anhtrinh919/claude-code-sdd
-
-Companion plugin: https://github.com/anhtrinh919/claude-sdd-wiki

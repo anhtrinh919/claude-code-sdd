@@ -34,21 +34,27 @@ Verify: `ls ~/.claude/plugins/tdd-guard`
 
 Auto-enabled by `/backend` on phases flagged `tdd_guard: on` in their spec frontmatter (typically logic-heavy phases). Without it, TDD discipline is a convention rather than a hard gate.
 
+### `tdd-config` — sanctioned wrapper around tdd-guard config (bundled)
+
+This plugin ships a small CLI at `bin/tdd-config` (zero deps, runs on `node` or `bun`). It is the **only** sanctioned way for `/backend` and `/code-harness` to toggle tdd-guard on and off per phase.
+
+Usage:
+
+```
+tdd-config enable           # turn guard on; on first init seeds an SDD-aware ignorePatterns list
+tdd-config disable          # turn guard off; preserves ignorePatterns
+tdd-config ignore <pat>     # add a glob to ignorePatterns (e.g. 'verify-*.sh', '**/migrations/**')
+tdd-config ignore --remove <pat>
+tdd-config show             # print resolved config
+```
+
+Why a wrapper exists: writing `.claude/tdd-guard/data/config.json` by hand wipes the project's accumulated `ignorePatterns`, which forces every session to re-discover the same exemptions. The wrapper merges instead of overwriting. Add the bundled `bin/` to your PATH (or symlink `tdd-config` somewhere on PATH) to make it directly invocable.
+
 ## `browse` — CLI browser for /review dogfooding
 
-`browse` is an MCP-driven headless browser used by `/review` Step 2 to click through your app like a real user. Two paths:
+`browse` is an MCP-driven headless browser used by `/review` Step 2 to click through your app like a real user. The simplest path is to install [gstack](https://github.com/anhtrinh919/gstack), which provides `browse` on PATH along with the related QA tooling (`/qa`, `/canary`, `/design-review`).
 
-- Bundled inside `gstack`: `~/.claude/skills/gstack/browse/dist/browse`
-- Standalone: build from source at https://github.com/anthropics/browse (if hosted), or rebuild from the gstack source:
-  ```
-  cd ~/.claude/skills/gstack
-  bun install
-  cd browse
-  mkdir -p dist
-  bun build src/cli.ts --compile --outfile dist/browse
-  ```
-
-Verify: `browse --help`
+Verify: `command -v browse` should print a path.
 
 Without browse, `/review` Step 1 (automated + manual spec checks) still works, but Step 2 (UX dogfooding) is skipped.
 

@@ -4,6 +4,7 @@
 phase: [N]
 type: initial | feature | rebuild
 tdd_guard: on | off
+ui: true | false
 ---
 
 ## Phase type
@@ -16,6 +17,11 @@ tdd_guard: on | off
 
 - **`on`** — every group writes a failing test before implementation. Use for logic-heavy phases (`initial`, `feature` with new backend).
 - **`off`** — pure UI / pure refactor / pure visual rebuild. No logic to test.
+
+## UI flag
+
+- **`ui: true`** (default — assume true if missing) — phase produces visible UI. `/review` Step 1.5 visual compliance runs.
+- **`ui: false`** — pure backend / infra / tooling phase, no rendered screens. `/review` Step 1.5 is skipped explicitly. Do not infer from screen count — set the flag.
 
 ## Scope
 [What this phase delivers. What a user can do on completion that they couldn't before. One paragraph.]

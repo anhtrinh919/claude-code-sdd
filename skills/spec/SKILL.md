@@ -20,7 +20,7 @@ Input comes from a `/ba` session. Output is structured markdown files. No drilli
 
 ## Wiki integration
 
-The `/spec` skill reads relevant past learnings at the start of every run and writes new learnings at friction points and phase completion. The wiki CLI is bundled inside this plugin at `${CLAUDE_PLUGIN_ROOT}/scripts/wiki.mjs` — no extra install. All wiki calls are non-blocking — a failed CLI logs a warning and the skill continues.
+The `/spec` skill reads relevant past learnings at the start of every run and writes new learnings at friction points and phase completion. All wiki calls are non-blocking — a failed CLI logs a warning and the skill continues.
 
 ### Read wiki
 
@@ -65,22 +65,30 @@ Input: constitution decisions from `/ba` Mode 1 (mission, tech stack, roadmap, e
 
 ### Step 1 — Write constitution (3 files)
 
-**`mission.md`** — Use schema at `~/.claude/skills/build/schemas/mission.md`. Every field filled. Purpose: one crisp sentence. Target users: named and specific. Vision: one paragraph. Success: observable and specific. Master User Journey: all 3 layers from `/ba` Part C — Actors (2–3 types), Core Jobs (3–5 JTBD statements), Named Flows (3–6 flows with phase labels on each step).
+**`mission.md`** — Use schema at `${CLAUDE_PLUGIN_ROOT}/skills/build/schemas/mission.md`. Every field filled. Purpose: one crisp sentence. Target users: named and specific. Vision: one paragraph. Success: observable and specific. Master User Journey: all 3 layers from `/ba` Part C — Actors (2–3 types), Core Jobs (3–5 JTBD statements), Named Flows (3–6 flows with phase labels on each step).
 
-**`tech-stack.md`** — Use schema at `~/.claude/skills/build/schemas/tech-stack.md`. Every choice filled in. Constraints and non-negotiables listed explicitly (e.g. "strict TypeScript from commit 1", "all dependencies pinned exactly — no ^ or ~"). Explicit exclusions named with reasoning. Technical decisions table seeded with choices already made.
+**`tech-stack.md`** — Use schema at `${CLAUDE_PLUGIN_ROOT}/skills/build/schemas/tech-stack.md`. Every choice filled in. Constraints and non-negotiables listed explicitly (e.g. "strict TypeScript from commit 1", "all dependencies pinned exactly — no ^ or ~"). Explicit exclusions named with reasoning. Technical decisions table seeded with choices already made.
 
-**`roadmap.md`** — Use schema at `~/.claude/skills/build/schemas/roadmap.md`. Phases numbered and sequenced. Each phase: feature name + what it delivers + why it comes at that position. Global out-of-scope named explicitly.
+**`roadmap.md`** — Use schema at `${CLAUDE_PLUGIN_ROOT}/skills/build/schemas/roadmap.md`. Phases numbered and sequenced. Each phase: feature name + what it delivers + why it comes at that position. Global out-of-scope named explicitly.
 
 ### Step 2 — Scaffold living docs
 
-Create these files with headers only (no placeholder content — an empty section with a header is fine, a section with fake content is not):
+Create these files with headers only (no placeholder content — an empty section with a header is fine, a section with fake content is not).
 
-- `README.md` — project name, mission (from mission.md), setup: "TBD", status: "Phase 0 — Constitution complete. Phase 1 not started."
-- `WIKI.md` — header: "# Project WIKI", subheader: "## Tech Stack Notes", body: "*(Added per phase)*"
-- `CHANGELOG.md` — header: "# Changelog", body: "*(Auto-generated — do not edit manually)*"
-- `docs/architecture.md` — tech stack section copied from tech-stack.md; rest TBD
-- `docs/api.md` — header only: "# API Surface — *(Updated per phase)*"
-- `docs/decisions.md` — seed with decisions already recorded in tech-stack.md Key Technical Decisions table
+**Living-doc prefix rule:** every agent-facing living doc (`WIKI.md`, `docs/architecture.md`, `docs/api.md`, `docs/decisions.md`) starts with this exact line as its first line, before the title:
+
+```
+> Agent context — not for human reading.
+```
+
+The operator visually skips files that lead with this blockquote; agents still read them. `README.md` is the *only* doc here that targets humans, so it does NOT get the prefix.
+
+- `README.md` — project name, mission (from mission.md), setup: "TBD", status: "Phase 0 — Constitution complete. Phase 1 not started." **No prefix.**
+- `WIKI.md` — prefix line, then header: "# Project WIKI", subheader: "## Tech Stack Notes", body: "*(Added per phase)*"
+- `CHANGELOG.md` — prefix line, then header: "# Changelog", body: "*(Auto-generated — do not edit manually)*"
+- `docs/architecture.md` — prefix line, then tech stack section copied from tech-stack.md; rest TBD
+- `docs/api.md` — prefix line, then header only: "# API Surface — *(Updated per phase)*"
+- `docs/decisions.md` — prefix line, then seed with decisions already recorded in tech-stack.md Key Technical Decisions table
 
 ### Step 3 — Seed WIKI from global WIKI
 
@@ -105,7 +113,36 @@ If no global WIKI yet: skip silently.
 
 Input: phase decisions from `/ba` Mode 2 (scope, user stories, screen inventory, competitor patterns, API needs, constraints).
 
-**Approval flow:** Write all three spec files to disk first (Steps 1–3). Then tell the user where to find them and ask them to review directly — they will comment in the files or in chat. Use `AskUserQuestion` after they've reviewed: "Reviewed the spec files. Ready to proceed to frontend?" with options "Yes, proceed" / "I have changes." Do not proceed to frontend until confirmed. This gate is mandatory — SDD does not allow implementation to start from an unapproved spec.
+**Scope challenge (before writing anything):** Search the existing codebase before speccing new work.
+
+1. For each feature in the BA handoff: does any existing file, route, component, or utility already handle part of it? List what exists and what's genuinely new.
+2. Identify the minimum set of changes needed — flag if more than 8 files or 2+ new abstractions are involved and ask whether to reduce scope before writing the spec.
+3. Note any deferred items in `roadmap.md` that overlap with this phase — can any be bundled without expanding scope?
+
+Output a brief "What already exists / What we're actually adding" summary at the top of the working context before writing. This is for the spec author only — not a user-facing deliverable.
+
+**Approval flow:** Write all three spec files to disk first (Steps 1–3). Before presenting for approval, run this self-check and surface any gaps in one message:
+- Every user story maps to at least one task group in `plan.md`
+- Every task group has a corresponding check in `validation.md`
+- All API contracts specify request shape, success response, and all error conditions (not just "500: unexpected error")
+- Primary flow stories from `/ba` are explicitly covered in `validation.md` manual checks
+
+Then ask the user to review directly. Use `AskUserQuestion` after they've reviewed: "Reviewed the spec files. Ready to proceed to frontend?" with options "Yes, proceed" / "I have changes." Do not proceed to frontend until confirmed. This gate is mandatory — SDD does not allow implementation to start from an unapproved spec.
+
+**Hash on approval (drift detector):** the moment the user replies "Yes, proceed":
+
+1. Compute `sha256sum specs/YYYY-MM-DD-[feature-slug]/requirements.md | cut -d' ' -f1`.
+2. Write the value to `.build-state.json` `requirementsHash`. Preserve every other field. This snapshot lets downstream skills detect post-approval edits — see Drift detection below.
+
+The hash is taken **after** the approval reply, never before — an in-progress edit must not generate a stale hash. Only `/spec` Mode 2 writes this field.
+
+### Drift detection (downstream skills should run on entry)
+
+`/frontend`, `/backend`, and `/review` recompute the hash on entry and compare to the recorded `requirementsHash`. If different:
+
+- Surface to the user once: "requirements.md changed since spec approval. The downstream work is now building against a different contract. Continue, or restart spec?"
+- Do not auto-block — the user may have intentionally tweaked a typo. Just make the drift loud.
+- If user picks "Continue": clear `requirementsHash` (set to empty string) so the same warning doesn't fire repeatedly.
 
 ### Step 1 — Determine spec directory
 
@@ -115,7 +152,7 @@ Also create a feature branch: `git checkout -b phase-N-[feature-slug]` where N i
 
 ### Step 2 — Write requirements.md
 
-Use schema at `~/.claude/skills/build/schemas/requirements.md`. Fill every section:
+Use schema at `${CLAUDE_PLUGIN_ROOT}/skills/build/schemas/requirements.md`. Fill every section:
 
 - **Frontmatter block** (required, at top): `phase`, `type` (`initial` | `feature` | `rebuild`), `tdd_guard` (`on` | `off`). These come from `/ba` Mode 2 Part A. Missing or wrong values cause downstream skills to misbehave (e.g. a `rebuild` with `type: feature` will preserve old UI patterns that should be deleted).
 - **Scope:** one paragraph — what this phase delivers, what a user can do on completion that they couldn't before
@@ -130,7 +167,7 @@ Validation rule: every API contract must have error responses specified. "500: u
 
 ### Step 3 — Write plan.md
 
-Use schema at `~/.claude/skills/build/schemas/plan.md`. Organize as numbered task groups, independently reviewable. Each group = one coherent slice that code-harness can implement and verify before moving on.
+Use schema at `${CLAUDE_PLUGIN_ROOT}/skills/build/schemas/plan.md`. Organize as numbered task groups, independently reviewable. Each group = one coherent slice that code-harness can implement and verify before moving on.
 
 **Design-agnostic contract.** `plan.md` is written *before* `/frontend` produces the design file. Any visual specifics written here (hex values, Tailwind classes, pixel sizes, font names) will go stale once the design is approved and will silently contradict the design file. Do not include them.
 
@@ -151,7 +188,7 @@ Sub-tasks within groups should be specific enough to implement without ambiguity
 
 ### Step 4 — Write validation.md
 
-Use schema at `~/.claude/skills/build/schemas/validation.md`. This is the test contract — `/review` reads this file and executes every check.
+Use schema at `${CLAUDE_PLUGIN_ROOT}/skills/build/schemas/validation.md`. This is the test contract — `/review` reads this file and executes every check.
 
 - **Automated checks:** specific commands that exit 0 on success. TypeScript typecheck, unit tests (named), API endpoint verification with curl
 - **Manual verification:** specific steps at named viewport sizes. Each step is binary (pass/fail)

@@ -12,6 +12,12 @@ If no `requirements.md` is found in a `specs/` directory: stop. "No phase spec f
 
 ---
 
+## Shared references — load before first Pencil MCP call
+
+**Load reference: Read `${CLAUDE_PLUGIN_ROOT}/skills/_shared/pencil-preflight.md` and apply.** This is the canonical Pencil pre-flight (launch via Bash, verify with `get_editor_state`, never kill processes mid-session, escape hatch via plain-JSON Read/jq). Apply whenever this skill needs to read or write the design file — primarily Phase 5 handover, but also any later return (review surfaced a gap, backend wants a frame re-checked).
+
+---
+
 ## Voice rules
 
 Plain language throughout.
@@ -22,7 +28,7 @@ Plain language throughout.
 
 ## Wiki integration
 
-The wiki CLI is bundled inside this plugin at `${CLAUDE_PLUGIN_ROOT}/scripts/wiki.mjs` — no extra install. Non-blocking — failures log and continue.
+Non-blocking — failures log and continue.
 
 ### Read wiki
 
@@ -62,11 +68,15 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/wiki.mjs" save --auto \
 
 ## Phase 1 — Design Tool Choice
 
-Before writing anything, ask one `AskUserQuestion`:
+**Persistence rule (Phase 2+ skip):** the design tool choice is a project-level decision, not a per-phase one. Read `mission.md` first — if it has a `## Design Tool` section with a recorded choice (`external` or `claude-code`), skip the question entirely and use that choice. Only Phase 1 (no recorded choice yet) asks.
+
+If no recorded choice exists, ask one `AskUserQuestion`:
 
 **"Before I write the design brief — how will the UI be designed?"**
 - **External tool** (Pencil.dev, Claude Design, Figma, etc.) — I'll write a lean mood/tone brief you can hand the tool; it makes component and layout calls
 - **Claude Code** — I design directly using the stack from tech-stack.md; I'll write a full-detail brief first
+
+After the user picks: append a `## Design Tool` section at the bottom of `mission.md` with the literal value (`external` or `claude-code`) on its own line. This is a one-time write — the user gets asked once, ever.
 
 The answer picks which brief template is used in Phase 2. The two templates are intentionally different — external tools do their own component thinking and perform worse when over-prescribed; Claude Code needs the full spec to design against.
 
@@ -76,11 +86,13 @@ The answer picks which brief template is used in Phase 2. The two templates are 
 
 **Step 0:** Run Read wiki (see Wiki integration) before writing the brief.
 
+**Memorable-thing question:** Before writing any brief, ask one plain-text question: "What's the one thing a user should remember or feel after using this?" This becomes the north star for every design decision in the brief — write it at the top of the brief under a `## Design intent` heading.
+
 Write `specs/YYYY-MM-DD-[feature]/design-brief.md` using the matching template.
 
 ### Path A — External tool brief (lean)
 
-Template: `~/.claude/skills/build/schemas/design-brief-external.md`
+Template: `${CLAUDE_PLUGIN_ROOT}/skills/build/schemas/design-brief-external.md`
 
 High-level only: product context, visual style direction + reasoning, tone/mood, palette and typography intent, optional references, screen checklist.
 
@@ -88,7 +100,7 @@ High-level only: product context, visual style direction + reasoning, tone/mood,
 
 ### Path B — Claude Code brief (full detail)
 
-Template: `~/.claude/skills/build/schemas/design-brief-internal.md`
+Template: `${CLAUDE_PLUGIN_ROOT}/skills/build/schemas/design-brief-internal.md`
 
 Full spec: visual style, layout hierarchy per screen, component decisions, interaction patterns, mobile strategy, empty/error states, screen checklist.
 
@@ -125,6 +137,23 @@ Design every screen from the checklist using the project's actual tech stack (fr
 5. One `AskUserQuestion` mid-way: "Direction right?" (options: "Keep going," "Adjust this," "Change the style"). Adjust once if needed, then continue.
 6. Complete all screens from the checklist before going to Phase 4.
 
+**Design quality gate (Claude Code path only):** Before Phase 4, run these two checks on every screen. Both are blockers.
+
+**Trunk test** — on each screen, can you instantly answer all four questions without thinking?
+1. What product/site is this?
+2. What page am I on?
+3. What are the major sections?
+4. What can I do from here?
+
+A FAIL on any screen means the information hierarchy is broken. Fix before approval.
+
+**AI slop check** — flag any screen containing these patterns and revise before approval:
+- Purple or violet gradient backgrounds
+- The 3-column feature grid (icon + title + 2-line description, repeated 3×)
+- Centered layout on every element
+- Uniform bubbly border-radius on everything
+- Decorative blobs or wavy SVG dividers
+
 Do not use Pencil MCP tools. Do not call Pencil MCP from Claude Code.
 
 ---
@@ -141,9 +170,11 @@ If approved: proceed to Phase 5.
 
 ## Phase 5 — Handover Doc + Design Tokens
 
+**STOP — run the pre-flight at the top of this skill before any MCP call.** If Pencil isn't open on WSL2, every step in this phase fails. Prompt the user to open Pencil and load the `.pen` file, wait for confirmation, then begin Step 1.
+
 This phase produces **two artifacts**:
 
-1. `specs/YYYY-MM-DD-[feature]/handover.md` — the frame index (per the schema at `~/.claude/skills/build/schemas/handover.md`)
+1. `specs/YYYY-MM-DD-[feature]/handover.md` — the frame index (per the schema at `${CLAUDE_PLUGIN_ROOT}/skills/build/schemas/handover.md`)
 2. `specs/YYYY-MM-DD-[feature]/design-tokens.css` — generated token file the backend imports directly
 
 ### Step 1 — Generate `design-tokens.css`
@@ -218,6 +249,7 @@ What NOT to include:
 - Design brief is always written before any design work starts, regardless of path.
 - During design (Phase 3 — External tool path): Claude does not call Pencil MCP tools. The user drives the design in their tool.
 - During handover (Phase 5) and after: Claude MAY call Pencil MCP tools (or the design-tool MCP equivalent) to read the finished design — e.g. to confirm frame IDs, extract reusable component names, or verify coverage against the checklist. Backend is expected to read the file via MCP during implementation.
+- **Pencil MCP requires the desktop app to be open on WSL2.** Run the pre-flight at the top of this skill before any `mcp__pencil__*` call. Never speculatively retry on `WebSocket not connected` — that just wastes turns; prompt the user to open the app instead.
 - If design reveals a spec gap, stop and surface it — never silently work around a missing API.
 - No approved design = skill incomplete. Do not write the handover without explicit approval.
 - The checklist at the end of the brief is the coverage contract — every item must be accounted for in the handover.

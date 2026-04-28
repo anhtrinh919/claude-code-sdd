@@ -1,6 +1,6 @@
 {
   "name": "claude-code-sdd",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Build-only manifest for the bundled wiki CLI inside the claude-code-sdd Claude Code plugin. Not published to npm.",
   "private": true,
   "license": "MIT",
